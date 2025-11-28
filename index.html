@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp, 
-  enableIndexedDbPersistence, // <-- NEW IMPORT
+  enableIndexedDbPersistence, 
 } from 'firebase/firestore';
 import { 
   getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken 
@@ -12,11 +12,27 @@ import {
 } from 'lucide-react';
 
 // --- 1. Firebase Configuration & Initialization ---
-const firebaseConfig = JSON.parse(__firebase_config);
+// NOTE FOR GITHUB: Replace the placeholder config below with your actual Firebase project settings
+// when running outside the Canvas environment.
+const placeholderFirebaseConfig = {
+    apiKey: "YOUR_API_KEY", // <--- REPLACE THIS
+    authDomain: "YOUR_AUTH_DOMAIN", // <--- REPLACE THIS
+    projectId: "YOUR_PROJECT_ID", // <--- REPLACE THIS
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_FIREBASE_APP_ID"
+};
+
+const firebaseConfig = typeof __firebase_config !== 'undefined' 
+    ? JSON.parse(__firebase_config) 
+    : placeholderFirebaseConfig;
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
 
 // Function to copy text to clipboard (handles iFrame limitations)
 const copyToClipboard = (text) => {
@@ -39,7 +55,7 @@ export default function InventoryApp() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isOfflineReady, setIsOfflineReady] = useState(false); // <-- NEW STATE
+  const [isOfflineReady, setIsOfflineReady] = useState(false); 
 
   // Form State
   const [newItemName, setNewItemName] = useState('');
@@ -58,9 +74,11 @@ export default function InventoryApp() {
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // This check handles the external authentication token provided by the hosting environment.
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
+          // Fallback to anonymous sign-in for local/GitHub environments if the token is missing.
           await signInAnonymously(auth);
         }
       } catch (err) {
@@ -171,6 +189,7 @@ export default function InventoryApp() {
   };
 
   const handleDelete = async (id) => {
+    // IMPORTANT: Custom modal should be used instead of window.confirm in a production/iFrame environment.
     if (window.confirm(`Are you sure you want to delete the item with ID: ${id}?`)) { 
         try {
           await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'inventory', id));
